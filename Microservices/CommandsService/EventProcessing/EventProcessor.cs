@@ -1,7 +1,10 @@
 using System.Linq.Expressions;
 using System.Text.Json;
 using AutoMapper;
+using CommandsService.Data;
 using CommandsService.Dtos;
+using CommandsService.Models;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace CommandsService.EventProcessing{
     public class EventProcessor(IServiceScopeFactory serviceScopeFactory, IMapper mapper) : IEventProcessor
@@ -14,7 +17,7 @@ namespace CommandsService.EventProcessing{
             var eventType = DetermineDevent(message);
             switch(eventType){
                 case EventType.PlatformPublished:
-                    //TODO
+                    AddPlatform(message);
                     break;
                 default:
                     break;
@@ -34,6 +37,27 @@ namespace CommandsService.EventProcessing{
                     return EventType.UnDetermined;
             }
         }
+
+        private void AddPlatform(string platformPublishedMessage){
+            using(var scope = _serviceScopeFactory.CreateScope()){
+                var repo = scope.ServiceProvider.GetService<ICommandRepo>();
+                var platfromPublishedDto = JsonSerializer.Deserialize<PlatfromPublishedDto>(platformPublishedMessage);
+                try{
+                    var plat = _mapper.Map<Platform>(platfromPublishedDto);
+                    if(!repo.ExternalPlatformExist(plat.ExternalID)){
+                        repo.CreatePlatfrom(plat);
+                        repo.SaveChanges();
+                        Console.WriteLine("Platform added successfully");
+                    }else{
+                        Console.WriteLine("Platform already exists");
+                    }
+                }
+                catch(Exception ex){
+                    Console.WriteLine("Could not add platform to Database" + ex);
+                }
+            }
+        }
+    
     }
     enum EventType{
         PlatformPublished,
