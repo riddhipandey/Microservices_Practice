@@ -36,7 +36,7 @@ namespace CommandsService.Data{
 
         public IEnumerable<Command> GetCommandsForPlatfrom(int platfromId)
         {
-            return _context.Commands.Where(c => c.PlatfromId == platfromId).OrderBy(p=> p.Platform.Name);
+            return _context.Commands.Where(c => c.PlatfromId == platfromId);
         }
 
         public bool PlatformExists(int platfromId)
